@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">SitePulse</string>
+    <string name="admob_app_id">ca-app-pub-3743421812450802~3305731208</string>
+    <string name="admob_ad_unit_id">ca-app-pub-3743421812450802/1150166149</string>
 </resources>
