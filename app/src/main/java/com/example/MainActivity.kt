@@ -9,10 +9,12 @@ import androidx.activity.viewModels
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -50,10 +52,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.ui.MainViewModel
 import com.example.ui.components.AddSiteDialog
@@ -64,6 +69,10 @@ import com.example.ui.screens.InstantCheckScreen
 import com.example.ui.theme.SitePulseTheme
 import com.example.ui.theme.StatusDown
 import com.example.ui.theme.StatusUp
+import com.google.android.gms.ads.AdRequest
+import com.google.android.gms.ads.AdSize
+import com.google.android.gms.ads.AdView
+import com.google.android.gms.ads.MobileAds
 import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
@@ -74,6 +83,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        MobileAds.initialize(this) {}
 
         setContent {
             SitePulseTheme {
@@ -170,63 +180,66 @@ fun MainApp(viewModel: MainViewModel) {
             )
         },
         bottomBar = {
-            NavigationBar(
-                containerColor = MaterialTheme.colorScheme.surface,
-                windowInsets = WindowInsets(0, 0, 0, 0)
-            ) {
-                NavigationBarItem(
-                    selected = selectedTab == 0,
-                    onClick = { selectedTab = 0 },
-                    icon = {
-                        Icon(
-                            if (selectedTab == 0) Icons.Filled.Dashboard else Icons.Outlined.Dashboard,
-                            contentDescription = "Watchlist"
-                        )
-                    },
-                    label = { Text("Watchlist") },
-                    modifier = Modifier.testTag("nav_tab_dashboard")
-                )
+            Column {
+                AdMobBanner()
+                NavigationBar(
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    windowInsets = WindowInsets(0, 0, 0, 0)
+                ) {
+                    NavigationBarItem(
+                        selected = selectedTab == 0,
+                        onClick = { selectedTab = 0 },
+                        icon = {
+                            Icon(
+                                if (selectedTab == 0) Icons.Filled.Dashboard else Icons.Outlined.Dashboard,
+                                contentDescription = "Watchlist"
+                            )
+                        },
+                        label = { Text("Watchlist") },
+                        modifier = Modifier.testTag("nav_tab_dashboard")
+                    )
 
-                NavigationBarItem(
-                    selected = selectedTab == 1,
-                    onClick = { selectedTab = 1 },
-                    icon = {
-                        Icon(
-                            if (selectedTab == 1) Icons.Filled.NetworkCheck else Icons.Outlined.NetworkCheck,
-                            contentDescription = "Instant Check"
-                        )
-                    },
-                    label = { Text("Instant Check") },
-                    modifier = Modifier.testTag("nav_tab_instant")
-                )
+                    NavigationBarItem(
+                        selected = selectedTab == 1,
+                        onClick = { selectedTab = 1 },
+                        icon = {
+                            Icon(
+                                if (selectedTab == 1) Icons.Filled.NetworkCheck else Icons.Outlined.NetworkCheck,
+                                contentDescription = "Instant Check"
+                            )
+                        },
+                        label = { Text("Instant Check") },
+                        modifier = Modifier.testTag("nav_tab_instant")
+                    )
 
-                NavigationBarItem(
-                    selected = selectedTab == 2,
-                    onClick = { selectedTab = 2 },
-                    icon = {
-                        if (incidentLogs.isNotEmpty()) {
-                            BadgedBox(
-                                badge = {
-                                    Badge(containerColor = StatusDown) {
-                                        Text("${incidentLogs.size.coerceAtMost(99)}")
+                    NavigationBarItem(
+                        selected = selectedTab == 2,
+                        onClick = { selectedTab = 2 },
+                        icon = {
+                            if (incidentLogs.isNotEmpty()) {
+                                BadgedBox(
+                                    badge = {
+                                        Badge(containerColor = StatusDown) {
+                                            Text("${incidentLogs.size.coerceAtMost(99)}")
+                                        }
                                     }
+                                ) {
+                                    Icon(
+                                        if (selectedTab == 2) Icons.Filled.Warning else Icons.Outlined.Warning,
+                                        contentDescription = "Incidents"
+                                    )
                                 }
-                            ) {
+                            } else {
                                 Icon(
                                     if (selectedTab == 2) Icons.Filled.Warning else Icons.Outlined.Warning,
                                     contentDescription = "Incidents"
                                 )
                             }
-                        } else {
-                            Icon(
-                                if (selectedTab == 2) Icons.Filled.Warning else Icons.Outlined.Warning,
-                                contentDescription = "Incidents"
-                            )
-                        }
-                    },
-                    label = { Text("Incidents") },
-                    modifier = Modifier.testTag("nav_tab_incidents")
-                )
+                        },
+                        label = { Text("Incidents") },
+                        modifier = Modifier.testTag("nav_tab_incidents")
+                    )
+                }
             }
         }
     ) { innerPadding ->
@@ -297,4 +310,26 @@ fun MainApp(viewModel: MainViewModel) {
             }
         )
     }
+}
+
+@Composable
+private fun AdMobBanner() {
+    val context = LocalContext.current
+    val screenWidthDp = LocalConfiguration.current.screenWidthDp
+
+    AndroidView(
+        modifier = Modifier.fillMaxWidth(),
+        factory = { viewContext ->
+            AdView(viewContext).apply {
+                setAdSize(
+                    AdSize.getCurrentOrientationAnchoredAdaptiveBannerAdSize(
+                        viewContext,
+                        screenWidthDp
+                    )
+                )
+                adUnitId = context.getString(R.string.admob_ad_unit_id)
+                loadAd(AdRequest.Builder().build())
+            }
+        }
+    )
 }
