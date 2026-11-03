@@ -1,0 +1,6 @@
+{
+  "name": "SitePulse",
+  "description": "Real-time website uptime, downtime, and latency monitor with live health checks and response metrics.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
