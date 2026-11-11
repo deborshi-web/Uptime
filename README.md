@@ -66,4 +66,4 @@ Checks use HTTP requests and follow redirects. URLs without a scheme are checked
 
 ## License
 
-No license is currently specified in this repository. Contact the repository owner before redistributing or using the project under particular licensing terms.
+Apache License
